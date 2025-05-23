@@ -1,7 +1,8 @@
 package main
 
 import (
-	"lingo/internal/handlers/auth"
+	"fmt"
+	"lingo/internal/handlers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,20 +27,20 @@ func NewServer(pool *pgxpool.Pool) *Server {
 	server := &Server{}
 	router.Use(gin.Logger())
 	// Initialize handlers here
-	sqlStore := db.NewStore(pool)
-	authHandler := handlers.NewAuthHandler(sqlStore.(*db.SQLStore))
+	sqlStore := db.NewSQLStore(pool)
+	// authHandler := handlers.NewAuthHandler(sqlStore.(*db.SQLStore))
 	adminHandler := handlers.NewAdminHandler(sqlStore.(*db.SQLStore))
 	public := router.Group("/v1/lingo")
 
-	public.POST("/auth/learner/signup", authHandler.RegisterUser)
-	public.POST("/auth/learner/login", authHandler.LoginUser)
+	public.POST("/auth/learner/signup", dummy)
+	public.POST("/auth/learner/login", dummy)
 	public.POST("/auth/learner/refresh", dummy)
-
-	public.POST("/auth/admin/signup", adminHandler.SignUpAdmin)
-	public.POST("/auth/admin/login", adminHandler.LoginAdmin)
+	fmt.Print(adminHandler)
+	public.POST("/auth/admin/signup", dummy)
+	public.POST("/auth/admin/login", dummy)
 	public.POST("/auth/admin/refresh", dummy)
-	public.POST("/admin/language/create", adminHandler.CreateLanguage)
-	public.POST("/admin/course/create/:langId", adminHandler.CreateCourse)
+	public.POST("/admin/language/create", dummy)
+	public.POST("/admin/course/create/:langId", dummy)
 	
 
 

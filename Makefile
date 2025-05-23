@@ -4,4 +4,6 @@ migrate:
 sqlc_gen:
 	@echo "Generating SQL code..."
 	sqlc generate
-
+run:
+	@echo "Running application..."
+	cd ./cmd/api && go run .

@@ -28,7 +28,7 @@ func main() {
 	defer pool.Close()
 
 	// Initialize server
-	server := NewServer(pool)
+	server := NewServer(pool, config)
 	if err := server.router.Run(config.ServerAddr); err != nil {
 		log.Fatalf("Couldn't start server due to %s", err.Error())
 	}

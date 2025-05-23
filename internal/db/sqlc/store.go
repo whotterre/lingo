@@ -13,9 +13,10 @@ type Store interface {
 
 // SQLStore holds a connection pool and implements Store
 type SQLStore struct {
-	pool    *pgxpool.Pool
+	pool *pgxpool.Pool
 	*Queries
 }
+
 
 func NewSQLStore(pool *pgxpool.Pool) Store {
 	return &SQLStore{

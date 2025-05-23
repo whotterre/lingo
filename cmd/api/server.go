@@ -45,8 +45,9 @@ func NewServer(pool *pgxpool.Pool, config utils.Config) *Server {
 	public.POST("/auth/admin/signup", adminHandler.RegisterAdmin)
 	public.POST("/auth/admin/login", adminHandler.LoginAdmin)
 	public.POST("/auth/admin/refresh", dummy)
-	public.POST("/admin/language/create", dummy)
-	public.POST("/admin/course/create/:langId", dummy)
+	public.POST("/admin/language/create", adminHandler.CreateNewLanguage)
+	public.POST("/admin/course/create/:langId", adminHandler.CreateNewCourse)
+
 	
 
 

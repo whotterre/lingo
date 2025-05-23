@@ -12,9 +12,15 @@ import (
 )
 
 const createAdmin = `-- name: CreateAdmin :one
-INSERT INTO admins (first_name, last_name, email, password, profile_image_url)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING admin_id, first_name, last_name, email, password, profile_image_url, joined_at
+INSERT INTO
+    admins (
+        first_name,
+        last_name,
+        email,
+        password,
+        profile_image_url
+    )
+VALUES ($1, $2, $3, $4, $5) RETURNING admin_id, first_name, last_name, email, password, profile_image_url, joined_at
 `
 
 type CreateAdminParams struct {
@@ -46,10 +52,241 @@ func (q *Queries) CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin
 	return i, err
 }
 
+const createCourse = `-- name: CreateCourse :one
+INSERT INTO
+    courses (
+        course_name,
+        language_id,
+        difficulty_level,
+        is_free
+    )
+VALUES ($1, $2, $3, $4) RETURNING course_id, language_id, course_name, difficulty_level, is_free, created_at
+`
+
+type CreateCourseParams struct {
+	CourseName      string      `json:"course_name"`
+	LanguageID      pgtype.UUID `json:"language_id"`
+	DifficultyLevel pgtype.Text `json:"difficulty_level"`
+	IsFree          pgtype.Bool `json:"is_free"`
+}
+
+func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error) {
+	row := q.db.QueryRow(ctx, createCourse,
+		arg.CourseName,
+		arg.LanguageID,
+		arg.DifficultyLevel,
+		arg.IsFree,
+	)
+	var i Course
+	err := row.Scan(
+		&i.CourseID,
+		&i.LanguageID,
+		&i.CourseName,
+		&i.DifficultyLevel,
+		&i.IsFree,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createExercise = `-- name: CreateExercise :one
+INSERT INTO
+    exercises (
+        exercise_type,
+        question_text,
+        correct_answer,
+        options,
+        audio_url
+    )
+VALUES ($1, $2, $3, $4, $5) RETURNING exercise_id, lesson_id, exercise_type, question_text, correct_answer, options, audio_url
+`
+
+type CreateExerciseParams struct {
+	ExerciseType  pgtype.Text `json:"exercise_type"`
+	QuestionText  string      `json:"question_text"`
+	CorrectAnswer string      `json:"correct_answer"`
+	Options       []byte      `json:"options"`
+	AudioUrl      pgtype.Text `json:"audio_url"`
+}
+
+func (q *Queries) CreateExercise(ctx context.Context, arg CreateExerciseParams) (Exercise, error) {
+	row := q.db.QueryRow(ctx, createExercise,
+		arg.ExerciseType,
+		arg.QuestionText,
+		arg.CorrectAnswer,
+		arg.Options,
+		arg.AudioUrl,
+	)
+	var i Exercise
+	err := row.Scan(
+		&i.ExerciseID,
+		&i.LessonID,
+		&i.ExerciseType,
+		&i.QuestionText,
+		&i.CorrectAnswer,
+		&i.Options,
+		&i.AudioUrl,
+	)
+	return i, err
+}
+
+const createLanguage = `-- name: CreateLanguage :one
+
+INSERT INTO
+    languages (
+        language_name,
+        language_code,
+        flag_emoji,
+        description
+    )
+VALUES ($1, $2, $3, $4) RETURNING language_id, language_name, language_code, flag_emoji, description
+`
+
+type CreateLanguageParams struct {
+	LanguageName string      `json:"language_name"`
+	LanguageCode string      `json:"language_code"`
+	FlagEmoji    pgtype.Text `json:"flag_emoji"`
+	Description  pgtype.Text `json:"description"`
+}
+
+// Maintenance Functionality --
+// Creational Queries
+func (q *Queries) CreateLanguage(ctx context.Context, arg CreateLanguageParams) (Language, error) {
+	row := q.db.QueryRow(ctx, createLanguage,
+		arg.LanguageName,
+		arg.LanguageCode,
+		arg.FlagEmoji,
+		arg.Description,
+	)
+	var i Language
+	err := row.Scan(
+		&i.LanguageID,
+		&i.LanguageName,
+		&i.LanguageCode,
+		&i.FlagEmoji,
+		&i.Description,
+	)
+	return i, err
+}
+
+const createLesson = `-- name: CreateLesson :one
+INSERT INTO
+    lessons (
+        lesson_title,
+        lesson_order,
+        xp_reward,
+        is_unlocked
+    )
+VALUES ($1, $2, $3, $4) RETURNING lesson_id, course_id, lesson_title, lesson_order, xp_reward, is_unlocked
+`
+
+type CreateLessonParams struct {
+	LessonTitle string      `json:"lesson_title"`
+	LessonOrder int32       `json:"lesson_order"`
+	XpReward    pgtype.Int4 `json:"xp_reward"`
+	IsUnlocked  pgtype.Bool `json:"is_unlocked"`
+}
+
+func (q *Queries) CreateLesson(ctx context.Context, arg CreateLessonParams) (Lesson, error) {
+	row := q.db.QueryRow(ctx, createLesson,
+		arg.LessonTitle,
+		arg.LessonOrder,
+		arg.XpReward,
+		arg.IsUnlocked,
+	)
+	var i Lesson
+	err := row.Scan(
+		&i.LessonID,
+		&i.CourseID,
+		&i.LessonTitle,
+		&i.LessonOrder,
+		&i.XpReward,
+		&i.IsUnlocked,
+	)
+	return i, err
+}
+
+const createUserCourse = `-- name: CreateUserCourse :one
+INSERT INTO
+    user_courses (
+        user_id,
+        course_id,
+        enrollment_date,
+        completion_percentage
+    )
+VALUES (
+        $1,
+        $2,
+        CURRENT_TIMESTAMP,
+        0.0
+    ) RETURNING user_course_id, user_id, course_id, enrollment_date, completion_percentage
+`
+
+type CreateUserCourseParams struct {
+	UserID   pgtype.UUID `json:"user_id"`
+	CourseID pgtype.UUID `json:"course_id"`
+}
+
+func (q *Queries) CreateUserCourse(ctx context.Context, arg CreateUserCourseParams) (UserCourse, error) {
+	row := q.db.QueryRow(ctx, createUserCourse, arg.UserID, arg.CourseID)
+	var i UserCourse
+	err := row.Scan(
+		&i.UserCourseID,
+		&i.UserID,
+		&i.CourseID,
+		&i.EnrollmentDate,
+		&i.CompletionPercentage,
+	)
+	return i, err
+}
+
+const createUserProgress = `-- name: CreateUserProgress :one
+INSERT INTO
+    user_progress (
+        user_id,
+        lesson_id,
+        score,
+        completed_at
+    )
+VALUES ($1, $2, $3, $4) RETURNING progress_id, user_id, lesson_id, exercise_id, is_completed, score, completed_at
+`
+
+type CreateUserProgressParams struct {
+	UserID      pgtype.UUID      `json:"user_id"`
+	LessonID    pgtype.UUID      `json:"lesson_id"`
+	Score       pgtype.Int4      `json:"score"`
+	CompletedAt pgtype.Timestamp `json:"completed_at"`
+}
+
+func (q *Queries) CreateUserProgress(ctx context.Context, arg CreateUserProgressParams) (UserProgress, error) {
+	row := q.db.QueryRow(ctx, createUserProgress,
+		arg.UserID,
+		arg.LessonID,
+		arg.Score,
+		arg.CompletedAt,
+	)
+	var i UserProgress
+	err := row.Scan(
+		&i.ProgressID,
+		&i.UserID,
+		&i.LessonID,
+		&i.ExerciseID,
+		&i.IsCompleted,
+		&i.Score,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
 const deleteAdmin = `-- name: DeleteAdmin :exec
 DELETE FROM admins
-WHERE admin_id = $1
-RETURNING admin_id, first_name, last_name, email, profile_image_url, joined_at
+WHERE
+    admin_id = $1 RETURNING admin_id,
+    first_name,
+    last_name,
+    email,
+    profile_image_url,
+    joined_at
 `
 
 func (q *Queries) DeleteAdmin(ctx context.Context, adminID pgtype.UUID) error {
@@ -58,9 +295,16 @@ func (q *Queries) DeleteAdmin(ctx context.Context, adminID pgtype.UUID) error {
 }
 
 const getAdminByEmail = `-- name: GetAdminByEmail :one
-SELECT admin_id, first_name, last_name, email, profile_image_url, joined_at
+SELECT
+    admin_id,
+    first_name,
+    last_name,
+    email,
+    profile_image_url,
+    joined_at
 FROM admins
-WHERE email = $1
+WHERE
+    email = $1
 LIMIT 1
 `
 
@@ -88,9 +332,16 @@ func (q *Queries) GetAdminByEmail(ctx context.Context, email string) (GetAdminBy
 }
 
 const getAdminById = `-- name: GetAdminById :one
-SELECT admin_id, first_name, last_name, email, profile_image_url, joined_at
+SELECT
+    admin_id,
+    first_name,
+    last_name,
+    email,
+    profile_image_url,
+    joined_at
 FROM admins
-WHERE admin_id = $1
+WHERE
+    admin_id = $1
 LIMIT 1
 `
 
@@ -118,8 +369,10 @@ func (q *Queries) GetAdminById(ctx context.Context, adminID pgtype.UUID) (GetAdm
 }
 
 const getAdminForLogin = `-- name: GetAdminForLogin :one
-SELECT admin_id, email, password FROM admins
-WHERE email = $1 
+SELECT admin_id, email, password
+FROM admins
+WHERE
+    email = $1
 LIMIT 1
 `
 
@@ -137,10 +390,18 @@ func (q *Queries) GetAdminForLogin(ctx context.Context, email string) (GetAdminF
 }
 
 const getAllAdmins = `-- name: GetAllAdmins :many
-SELECT admin_id, first_name, last_name, email, profile_image_url, joined_at
+SELECT
+    admin_id,
+    first_name,
+    last_name,
+    email,
+    profile_image_url,
+    joined_at
 FROM admins
 ORDER BY joined_at DESC
-LIMIT $1 OFFSET $2
+LIMIT $1
+OFFSET
+    $2
 `
 
 type GetAllAdminsParams struct {
@@ -184,15 +445,120 @@ func (q *Queries) GetAllAdmins(ctx context.Context, arg GetAllAdminsParams) ([]G
 	return items, nil
 }
 
+const getAllLanguages = `-- name: GetAllLanguages :many
+
+SELECT
+    language_id,
+    language_name,
+    language_code,
+    flag_emoji,
+    description
+FROM languages
+ORDER BY language_name ASC
+LIMIT $1
+OFFSET
+    $2
+`
+
+type GetAllLanguagesParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+// Retrieval Queries
+func (q *Queries) GetAllLanguages(ctx context.Context, arg GetAllLanguagesParams) ([]Language, error) {
+	rows, err := q.db.Query(ctx, getAllLanguages, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Language{}
+	for rows.Next() {
+		var i Language
+		if err := rows.Scan(
+			&i.LanguageID,
+			&i.LanguageName,
+			&i.LanguageCode,
+			&i.FlagEmoji,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLanguageById = `-- name: GetLanguageById :one
+SELECT
+    language_id,
+    language_name,
+    language_code,
+    flag_emoji,
+    description
+FROM languages
+WHERE
+    language_id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetLanguageById(ctx context.Context, languageID pgtype.UUID) (Language, error) {
+	row := q.db.QueryRow(ctx, getLanguageById, languageID)
+	var i Language
+	err := row.Scan(
+		&i.LanguageID,
+		&i.LanguageName,
+		&i.LanguageCode,
+		&i.FlagEmoji,
+		&i.Description,
+	)
+	return i, err
+}
+
+const getLanguageByName = `-- name: GetLanguageByName :one
+SELECT
+    language_id,
+    language_name,
+    language_code,
+    flag_emoji,
+    description
+FROM languages
+WHERE
+    language_name = $1
+LIMIT 1
+`
+
+func (q *Queries) GetLanguageByName(ctx context.Context, languageName string) (Language, error) {
+	row := q.db.QueryRow(ctx, getLanguageByName, languageName)
+	var i Language
+	err := row.Scan(
+		&i.LanguageID,
+		&i.LanguageName,
+		&i.LanguageCode,
+		&i.FlagEmoji,
+		&i.Description,
+	)
+	return i, err
+}
+
 const updateAdmin = `-- name: UpdateAdmin :exec
 UPDATE admins
-SET first_name = $1,
+SET
+    first_name = $1,
     last_name = $2,
     email = $3,
     password = $4,
     profile_image_url = $5
-WHERE admin_id = $6
-RETURNING admin_id, first_name, last_name, email, profile_image_url, joined_at
+WHERE
+    admin_id = $6 RETURNING admin_id,
+    first_name,
+    last_name,
+    email,
+    profile_image_url,
+    joined_at
 `
 
 type UpdateAdminParams struct {

@@ -6,6 +6,7 @@ import (
 	db "lingo/internal/db/sqlc"
 	"lingo/pkg/auth/tokengen"
 	"lingo/utils"
+	"log"
 	"net/http"
 	"time"
 
@@ -15,17 +16,15 @@ import (
 
 type AdminHandler struct {
 	store *db.SQLStore
-	tok tokengen.Maker
+	tok   tokengen.Maker
 }
 
 func NewAdminHandler(store *db.SQLStore, tok tokengen.Maker) *AdminHandler {
 	return &AdminHandler{
 		store: store,
-		tok: tok,
+		tok:   tok,
 	}
 }
-
-
 
 func (h *AdminHandler) RegisterAdmin(c *gin.Context) {
 	var req db.CreateAdminParams
@@ -67,7 +66,6 @@ func (h *AdminHandler) RegisterAdmin(c *gin.Context) {
 		"message": "Admin created successfully",
 	})
 }
-
 
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -112,5 +110,80 @@ func (h *AdminHandler) LoginAdmin(c *gin.Context) {
 		"message":       "login successful",
 		"token":         token,
 		"refresh_token": refreshToken,
+	})
+}
+
+// CreateNewLanguage creates a new language in the database
+func (h *AdminHandler) CreateNewLanguage(c *gin.Context) {
+	var req db.CreateLanguageParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if the language already exists
+	_, err := h.store.GetLanguageByName(c, req.LanguageName)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "language already exists"})
+		return
+	}
+	if err != pgx.ErrNoRows {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check language"})
+		return
+	}
+
+	language, err := h.store.CreateLanguage(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create language"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Language created successfully",
+		"language": language,
+	})
+}
+
+// CreateNewCourse creates a new course in the database
+// It requires the language ID as a URL parameter.
+func (h *AdminHandler) CreateNewCourse(c *gin.Context) {
+	var req db.CreateCourseParams
+	langId := c.Param("langId")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Convert lang id from string to uuid
+	langIdUUID, err := utils.StringToPgTypeUUID(langId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid language ID format"})
+		return
+	}
+
+	// Check if the language exists
+	_, err = h.store.GetLanguageById(c, langIdUUID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Language not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check language"})
+		return
+	}
+
+	// Assign the language ID to the request
+	req.LanguageID = langIdUUID
+
+	course, err := h.store.CreateCourse(c, req)
+	if err != nil {
+		log.Print("Error creating course:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create course"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Course created successfully",
+		"course":  course,
 	})
 }

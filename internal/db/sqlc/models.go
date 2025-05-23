@@ -20,7 +20,7 @@ type Admin struct {
 
 type Course struct {
 	CourseID        pgtype.UUID      `json:"course_id"`
-	LanguageID      pgtype.Int4      `json:"language_id"`
+	LanguageID      pgtype.UUID      `json:"language_id"`
 	CourseName      string           `json:"course_name"`
 	DifficultyLevel pgtype.Text      `json:"difficulty_level"`
 	IsFree          pgtype.Bool      `json:"is_free"`
@@ -29,7 +29,7 @@ type Course struct {
 
 type Exercise struct {
 	ExerciseID    pgtype.UUID `json:"exercise_id"`
-	LessonID      pgtype.Int4 `json:"lesson_id"`
+	LessonID      pgtype.UUID `json:"lesson_id"`
 	ExerciseType  pgtype.Text `json:"exercise_type"`
 	QuestionText  string      `json:"question_text"`
 	CorrectAnswer string      `json:"correct_answer"`
@@ -47,7 +47,7 @@ type Language struct {
 
 type Lesson struct {
 	LessonID    pgtype.UUID `json:"lesson_id"`
-	CourseID    pgtype.Int4 `json:"course_id"`
+	CourseID    pgtype.UUID `json:"course_id"`
 	LessonTitle string      `json:"lesson_title"`
 	LessonOrder int32       `json:"lesson_order"`
 	XpReward    pgtype.Int4 `json:"xp_reward"`
@@ -68,17 +68,17 @@ type User struct {
 
 type UserCourse struct {
 	UserCourseID         pgtype.UUID      `json:"user_course_id"`
-	UserID               pgtype.Int4      `json:"user_id"`
-	CourseID             pgtype.Int4      `json:"course_id"`
+	UserID               pgtype.UUID      `json:"user_id"`
+	CourseID             pgtype.UUID      `json:"course_id"`
 	EnrollmentDate       pgtype.Timestamp `json:"enrollment_date"`
 	CompletionPercentage pgtype.Float8    `json:"completion_percentage"`
 }
 
 type UserProgress struct {
 	ProgressID  pgtype.UUID      `json:"progress_id"`
-	UserID      pgtype.Int4      `json:"user_id"`
-	LessonID    pgtype.Int4      `json:"lesson_id"`
-	ExerciseID  pgtype.Int4      `json:"exercise_id"`
+	UserID      pgtype.UUID      `json:"user_id"`
+	LessonID    pgtype.UUID      `json:"lesson_id"`
+	ExerciseID  pgtype.UUID      `json:"exercise_id"`
 	IsCompleted pgtype.Bool      `json:"is_completed"`
 	Score       pgtype.Int4      `json:"score"`
 	CompletedAt pgtype.Timestamp `json:"completed_at"`

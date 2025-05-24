@@ -109,22 +109,24 @@ VALUES ($1, $2, $3, $4) RETURNING *;
 INSERT INTO
     lessons (
         lesson_title,
+        course_id,
         lesson_order,
         xp_reward,
         is_unlocked
     )
-VALUES ($1, $2, $3, $4) RETURNING *;
+VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
 -- name: CreateExercise :one
 INSERT INTO
     exercises (
+        lesson_id,
         exercise_type,
         question_text,
         correct_answer,
         options,
         audio_url
     )
-VALUES ($1, $2, $3, $4, $5) RETURNING *;
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
 -- name: CreateUserProgress :one
 INSERT INTO
@@ -190,3 +192,9 @@ FROM languages
 WHERE
     language_name = $1
 LIMIT 1;
+
+-- name: GetAllCourses :many
+SELECT * FROM courses
+RETURNING *;
+
+

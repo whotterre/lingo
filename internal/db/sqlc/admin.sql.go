@@ -92,16 +92,18 @@ func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Cou
 const createExercise = `-- name: CreateExercise :one
 INSERT INTO
     exercises (
+        lesson_id,
         exercise_type,
         question_text,
         correct_answer,
         options,
         audio_url
     )
-VALUES ($1, $2, $3, $4, $5) RETURNING exercise_id, lesson_id, exercise_type, question_text, correct_answer, options, audio_url
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING exercise_id, lesson_id, exercise_type, question_text, correct_answer, options, audio_url
 `
 
 type CreateExerciseParams struct {
+	LessonID      pgtype.UUID `json:"lesson_id"`
 	ExerciseType  pgtype.Text `json:"exercise_type"`
 	QuestionText  string      `json:"question_text"`
 	CorrectAnswer string      `json:"correct_answer"`
@@ -111,6 +113,7 @@ type CreateExerciseParams struct {
 
 func (q *Queries) CreateExercise(ctx context.Context, arg CreateExerciseParams) (Exercise, error) {
 	row := q.db.QueryRow(ctx, createExercise,
+		arg.LessonID,
 		arg.ExerciseType,
 		arg.QuestionText,
 		arg.CorrectAnswer,
@@ -173,15 +176,17 @@ const createLesson = `-- name: CreateLesson :one
 INSERT INTO
     lessons (
         lesson_title,
+        course_id,
         lesson_order,
         xp_reward,
         is_unlocked
     )
-VALUES ($1, $2, $3, $4) RETURNING lesson_id, course_id, lesson_title, lesson_order, xp_reward, is_unlocked
+VALUES ($1, $2, $3, $4, $5) RETURNING lesson_id, course_id, lesson_title, lesson_order, xp_reward, is_unlocked
 `
 
 type CreateLessonParams struct {
 	LessonTitle string      `json:"lesson_title"`
+	CourseID    pgtype.UUID `json:"course_id"`
 	LessonOrder int32       `json:"lesson_order"`
 	XpReward    pgtype.Int4 `json:"xp_reward"`
 	IsUnlocked  pgtype.Bool `json:"is_unlocked"`
@@ -190,6 +195,7 @@ type CreateLessonParams struct {
 func (q *Queries) CreateLesson(ctx context.Context, arg CreateLessonParams) (Lesson, error) {
 	row := q.db.QueryRow(ctx, createLesson,
 		arg.LessonTitle,
+		arg.CourseID,
 		arg.LessonOrder,
 		arg.XpReward,
 		arg.IsUnlocked,

@@ -8,6 +8,7 @@ import (
 	"lingo/utils"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -187,3 +188,73 @@ func (h *AdminHandler) CreateNewCourse(c *gin.Context) {
 		"course":  course,
 	})
 }
+
+func (h *AdminHandler) CreateNewLesson(c *gin.Context) {
+	courseId := c.Param("courseId")
+	var req db.CreateLessonParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// Convert to PostgreSQL UUID data type from string
+	courseUUID, err := utils.StringToPgTypeUUID(courseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("couldn't convert course ID to Postgres UUID data type %s", err),
+		})
+		return
+	}
+	req.CourseID = courseUUID
+	// Create new user record for new exercise
+	newLesson, err := h.store.CreateLesson(c, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create new lesson because %s", err),
+		})
+		return
+	}
+
+	// On successful response 
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Lesson created successfully",
+		"lesson":   newLesson,
+	})
+
+}
+
+// CreateNewExercise creates a new exercise for a lesson in the database
+// It requires the lesson ID as a URL parameter.
+func (h *AdminHandler) CreateNewExercise(c *gin.Context) {
+	lessonId := c.Param("lessonId")
+	var req db.CreateExerciseParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// Convert to PostgreSQL UUID data type from string
+	lessonUUID, err := utils.StringToPgTypeUUID(lessonId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("couldn't convert course ID to Postgres UUID data type %s", err),
+		})
+		return
+	}
+	req.LessonID = lessonUUID
+	// Create new user record for new exercise
+	newExercise, err := h.store.CreateExercise(c, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create new exercise because %s", err),
+		})
+		return
+	}
+
+	// Successful
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Exercise created successfully",
+		"exerciseId": newExercise.ExerciseID,
+		"exercise":   newExercise,
+	})
+
+}
+

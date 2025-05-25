@@ -134,7 +134,6 @@ func (q *Queries) CreateExercise(ctx context.Context, arg CreateExerciseParams) 
 }
 
 const createLanguage = `-- name: CreateLanguage :one
-
 INSERT INTO
     languages (
         language_name,
@@ -152,8 +151,6 @@ type CreateLanguageParams struct {
 	Description  pgtype.Text `json:"description"`
 }
 
-// Maintenance Functionality --
-// Creational Queries
 func (q *Queries) CreateLanguage(ctx context.Context, arg CreateLanguageParams) (Language, error) {
 	row := q.db.QueryRow(ctx, createLanguage,
 		arg.LanguageName,
@@ -285,18 +282,142 @@ func (q *Queries) CreateUserProgress(ctx context.Context, arg CreateUserProgress
 }
 
 const deleteAdmin = `-- name: DeleteAdmin :exec
-DELETE FROM admins
-WHERE
-    admin_id = $1 RETURNING admin_id,
-    first_name,
-    last_name,
-    email,
-    profile_image_url,
-    joined_at
+DELETE FROM admins WHERE admin_id = $1
 `
 
+// Delete admin by ID
 func (q *Queries) DeleteAdmin(ctx context.Context, adminID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteAdmin, adminID)
+	return err
+}
+
+const deleteCourse = `-- name: DeleteCourse :exec
+DELETE FROM courses WHERE course_id = $1
+`
+
+// Delete course by ID
+func (q *Queries) DeleteCourse(ctx context.Context, courseID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCourse, courseID)
+	return err
+}
+
+const deleteCoursesByLanguageId = `-- name: DeleteCoursesByLanguageId :exec
+DELETE FROM courses WHERE language_id = $1
+`
+
+// Delete courses by language ID
+func (q *Queries) DeleteCoursesByLanguageId(ctx context.Context, languageID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCoursesByLanguageId, languageID)
+	return err
+}
+
+const deleteExercise = `-- name: DeleteExercise :exec
+DELETE FROM exercises WHERE exercise_id = $1
+`
+
+// Delete exercise by ID
+func (q *Queries) DeleteExercise(ctx context.Context, exerciseID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteExercise, exerciseID)
+	return err
+}
+
+const deleteExercisesByLessonId = `-- name: DeleteExercisesByLessonId :exec
+DELETE FROM exercises WHERE lesson_id = $1
+`
+
+// Delete exercises by lesson ID
+func (q *Queries) DeleteExercisesByLessonId(ctx context.Context, lessonID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteExercisesByLessonId, lessonID)
+	return err
+}
+
+const deleteLanguage = `-- name: DeleteLanguage :exec
+DELETE FROM languages WHERE language_id = $1
+`
+
+// Delete language by ID
+func (q *Queries) DeleteLanguage(ctx context.Context, languageID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLanguage, languageID)
+	return err
+}
+
+const deleteLesson = `-- name: DeleteLesson :exec
+DELETE FROM lessons WHERE lesson_id = $1
+`
+
+// Delete lesson by ID
+func (q *Queries) DeleteLesson(ctx context.Context, lessonID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLesson, lessonID)
+	return err
+}
+
+const deleteLessonsByCourseId = `-- name: DeleteLessonsByCourseId :exec
+DELETE FROM lessons WHERE course_id = $1
+`
+
+// Delete lessons by course ID
+func (q *Queries) DeleteLessonsByCourseId(ctx context.Context, courseID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLessonsByCourseId, courseID)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE user_id = $1
+`
+
+// Delete user by ID
+func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, userID)
+	return err
+}
+
+const deleteUserCoursesByCourseId = `-- name: DeleteUserCoursesByCourseId :exec
+DELETE FROM user_courses WHERE course_id = $1
+`
+
+// Delete user courses by course ID
+func (q *Queries) DeleteUserCoursesByCourseId(ctx context.Context, courseID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserCoursesByCourseId, courseID)
+	return err
+}
+
+const deleteUserCoursesByUserId = `-- name: DeleteUserCoursesByUserId :exec
+DELETE FROM user_courses WHERE user_id = $1
+`
+
+// Delete user courses by user ID
+func (q *Queries) DeleteUserCoursesByUserId(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserCoursesByUserId, userID)
+	return err
+}
+
+const deleteUserProgressByExerciseId = `-- name: DeleteUserProgressByExerciseId :exec
+DELETE FROM user_progress WHERE exercise_id = $1
+`
+
+// Delete user progress by exercise ID
+func (q *Queries) DeleteUserProgressByExerciseId(ctx context.Context, exerciseID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserProgressByExerciseId, exerciseID)
+	return err
+}
+
+const deleteUserProgressByLessonId = `-- name: DeleteUserProgressByLessonId :exec
+DELETE FROM user_progress WHERE lesson_id = $1
+`
+
+// Delete user progress by lesson ID
+func (q *Queries) DeleteUserProgressByLessonId(ctx context.Context, lessonID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserProgressByLessonId, lessonID)
+	return err
+}
+
+const deleteUserProgressByUserId = `-- name: DeleteUserProgressByUserId :exec
+DELETE FROM user_progress WHERE user_id = $1
+`
+
+// Delete user progress by user ID
+func (q *Queries) DeleteUserProgressByUserId(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserProgressByUserId, userID)
 	return err
 }
 
@@ -395,51 +516,105 @@ func (q *Queries) GetAdminForLogin(ctx context.Context, email string) (GetAdminF
 	return i, err
 }
 
-const getAllAdmins = `-- name: GetAllAdmins :many
+const getAllCourses = `-- name: GetAllCourses :many
+SELECT course_id, language_id, course_name, difficulty_level, is_free, created_at FROM courses
+`
+
+func (q *Queries) GetAllCourses(ctx context.Context) ([]Course, error) {
+	rows, err := q.db.Query(ctx, getAllCourses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Course{}
+	for rows.Next() {
+		var i Course
+		if err := rows.Scan(
+			&i.CourseID,
+			&i.LanguageID,
+			&i.CourseName,
+			&i.DifficultyLevel,
+			&i.IsFree,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllCoursesByLanguage = `-- name: GetAllCoursesByLanguage :many
+SELECT course_id, language_id, course_name, difficulty_level, is_free, created_at FROM courses WHERE language_id = $1
+`
+
+func (q *Queries) GetAllCoursesByLanguage(ctx context.Context, languageID pgtype.UUID) ([]Course, error) {
+	rows, err := q.db.Query(ctx, getAllCoursesByLanguage, languageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Course{}
+	for rows.Next() {
+		var i Course
+		if err := rows.Scan(
+			&i.CourseID,
+			&i.LanguageID,
+			&i.CourseName,
+			&i.DifficultyLevel,
+			&i.IsFree,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllExercises = `-- name: GetAllExercises :many
 SELECT
-    admin_id,
-    first_name,
-    last_name,
-    email,
-    profile_image_url,
-    joined_at
-FROM admins
-ORDER BY joined_at DESC
+    exercise_id,
+    lesson_id,
+    exercise_type,
+    question_text,
+    correct_answer,
+    options,
+    audio_url
+FROM exercises
 LIMIT $1
 OFFSET
     $2
 `
 
-type GetAllAdminsParams struct {
+type GetAllExercisesParams struct {
 	Limit  int32 `json:"limit"`
 	Offset int32 `json:"offset"`
 }
 
-type GetAllAdminsRow struct {
-	AdminID         pgtype.UUID      `json:"admin_id"`
-	FirstName       string           `json:"first_name"`
-	LastName        string           `json:"last_name"`
-	Email           string           `json:"email"`
-	ProfileImageUrl pgtype.Text      `json:"profile_image_url"`
-	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-}
-
-func (q *Queries) GetAllAdmins(ctx context.Context, arg GetAllAdminsParams) ([]GetAllAdminsRow, error) {
-	rows, err := q.db.Query(ctx, getAllAdmins, arg.Limit, arg.Offset)
+func (q *Queries) GetAllExercises(ctx context.Context, arg GetAllExercisesParams) ([]Exercise, error) {
+	rows, err := q.db.Query(ctx, getAllExercises, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetAllAdminsRow{}
+	items := []Exercise{}
 	for rows.Next() {
-		var i GetAllAdminsRow
+		var i Exercise
 		if err := rows.Scan(
-			&i.AdminID,
-			&i.FirstName,
-			&i.LastName,
-			&i.Email,
-			&i.ProfileImageUrl,
-			&i.JoinedAt,
+			&i.ExerciseID,
+			&i.LessonID,
+			&i.ExerciseType,
+			&i.QuestionText,
+			&i.CorrectAnswer,
+			&i.Options,
+			&i.AudioUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -487,6 +662,124 @@ func (q *Queries) GetAllLanguages(ctx context.Context, arg GetAllLanguagesParams
 			&i.LanguageCode,
 			&i.FlagEmoji,
 			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllLessons = `-- name: GetAllLessons :many
+SELECT lesson_id, course_id, lesson_title, lesson_order, xp_reward, is_unlocked FROM lessons LIMIT $1 OFFSET $2
+`
+
+type GetAllLessonsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) GetAllLessons(ctx context.Context, arg GetAllLessonsParams) ([]Lesson, error) {
+	rows, err := q.db.Query(ctx, getAllLessons, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Lesson{}
+	for rows.Next() {
+		var i Lesson
+		if err := rows.Scan(
+			&i.LessonID,
+			&i.CourseID,
+			&i.LessonTitle,
+			&i.LessonOrder,
+			&i.XpReward,
+			&i.IsUnlocked,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getExerciseById = `-- name: GetExerciseById :one
+SELECT
+    exercise_id,
+    lesson_id,
+    exercise_type,
+    question_text,
+    correct_answer,
+    options,
+    audio_url
+FROM exercises
+WHERE
+    exercise_id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetExerciseById(ctx context.Context, exerciseID pgtype.UUID) (Exercise, error) {
+	row := q.db.QueryRow(ctx, getExerciseById, exerciseID)
+	var i Exercise
+	err := row.Scan(
+		&i.ExerciseID,
+		&i.LessonID,
+		&i.ExerciseType,
+		&i.QuestionText,
+		&i.CorrectAnswer,
+		&i.Options,
+		&i.AudioUrl,
+	)
+	return i, err
+}
+
+const getExercisesByLessonId = `-- name: GetExercisesByLessonId :many
+SELECT
+    exercise_id,
+    lesson_id,
+    exercise_type,
+    question_text,
+    correct_answer,
+    options,
+    audio_url
+FROM exercises
+WHERE
+    lesson_id = $1
+ORDER BY exercise_id ASC
+LIMIT $2
+OFFSET
+    $3
+`
+
+type GetExercisesByLessonIdParams struct {
+	LessonID pgtype.UUID `json:"lesson_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
+}
+
+func (q *Queries) GetExercisesByLessonId(ctx context.Context, arg GetExercisesByLessonIdParams) ([]Exercise, error) {
+	rows, err := q.db.Query(ctx, getExercisesByLessonId, arg.LessonID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Exercise{}
+	for rows.Next() {
+		var i Exercise
+		if err := rows.Scan(
+			&i.ExerciseID,
+			&i.LessonID,
+			&i.ExerciseType,
+			&i.QuestionText,
+			&i.CorrectAnswer,
+			&i.Options,
+			&i.AudioUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -550,6 +843,156 @@ func (q *Queries) GetLanguageByName(ctx context.Context, languageName string) (L
 	return i, err
 }
 
+const getLessonById = `-- name: GetLessonById :one
+SELECT
+    lesson_id,
+    lesson_title,
+    course_id,
+    lesson_order,
+    xp_reward,
+    is_unlocked
+FROM lessons
+WHERE
+    lesson_id = $1
+LIMIT 1
+`
+
+type GetLessonByIdRow struct {
+	LessonID    pgtype.UUID `json:"lesson_id"`
+	LessonTitle string      `json:"lesson_title"`
+	CourseID    pgtype.UUID `json:"course_id"`
+	LessonOrder int32       `json:"lesson_order"`
+	XpReward    pgtype.Int4 `json:"xp_reward"`
+	IsUnlocked  pgtype.Bool `json:"is_unlocked"`
+}
+
+func (q *Queries) GetLessonById(ctx context.Context, lessonID pgtype.UUID) (GetLessonByIdRow, error) {
+	row := q.db.QueryRow(ctx, getLessonById, lessonID)
+	var i GetLessonByIdRow
+	err := row.Scan(
+		&i.LessonID,
+		&i.LessonTitle,
+		&i.CourseID,
+		&i.LessonOrder,
+		&i.XpReward,
+		&i.IsUnlocked,
+	)
+	return i, err
+}
+
+const getLessonsByCourseId = `-- name: GetLessonsByCourseId :many
+SELECT
+    lesson_id,
+    lesson_title,
+    course_id,
+    lesson_order,
+    xp_reward,
+    is_unlocked
+FROM lessons
+WHERE
+    course_id = $1
+ORDER BY lesson_order ASC
+LIMIT $2
+OFFSET
+    $3
+`
+
+type GetLessonsByCourseIdParams struct {
+	CourseID pgtype.UUID `json:"course_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
+}
+
+type GetLessonsByCourseIdRow struct {
+	LessonID    pgtype.UUID `json:"lesson_id"`
+	LessonTitle string      `json:"lesson_title"`
+	CourseID    pgtype.UUID `json:"course_id"`
+	LessonOrder int32       `json:"lesson_order"`
+	XpReward    pgtype.Int4 `json:"xp_reward"`
+	IsUnlocked  pgtype.Bool `json:"is_unlocked"`
+}
+
+func (q *Queries) GetLessonsByCourseId(ctx context.Context, arg GetLessonsByCourseIdParams) ([]GetLessonsByCourseIdRow, error) {
+	rows, err := q.db.Query(ctx, getLessonsByCourseId, arg.CourseID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetLessonsByCourseIdRow{}
+	for rows.Next() {
+		var i GetLessonsByCourseIdRow
+		if err := rows.Scan(
+			&i.LessonID,
+			&i.LessonTitle,
+			&i.CourseID,
+			&i.LessonOrder,
+			&i.XpReward,
+			&i.IsUnlocked,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserProgressByUserId = `-- name: GetUserProgressByUserId :many
+SELECT up.progress_id, up.user_id, up.lesson_id, up.score, up.completed_at, l.lesson_title
+FROM user_progress up
+    JOIN lessons l ON up.lesson_id = l.lesson_id
+WHERE
+    up.user_id = $1
+ORDER BY up.completed_at DESC
+LIMIT $2
+OFFSET
+    $3
+`
+
+type GetUserProgressByUserIdParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	Limit  int32       `json:"limit"`
+	Offset int32       `json:"offset"`
+}
+
+type GetUserProgressByUserIdRow struct {
+	ProgressID  pgtype.UUID      `json:"progress_id"`
+	UserID      pgtype.UUID      `json:"user_id"`
+	LessonID    pgtype.UUID      `json:"lesson_id"`
+	Score       pgtype.Int4      `json:"score"`
+	CompletedAt pgtype.Timestamp `json:"completed_at"`
+	LessonTitle string           `json:"lesson_title"`
+}
+
+func (q *Queries) GetUserProgressByUserId(ctx context.Context, arg GetUserProgressByUserIdParams) ([]GetUserProgressByUserIdRow, error) {
+	rows, err := q.db.Query(ctx, getUserProgressByUserId, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserProgressByUserIdRow{}
+	for rows.Next() {
+		var i GetUserProgressByUserIdRow
+		if err := rows.Scan(
+			&i.ProgressID,
+			&i.UserID,
+			&i.LessonID,
+			&i.Score,
+			&i.CompletedAt,
+			&i.LessonTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAdmin = `-- name: UpdateAdmin :exec
 UPDATE admins
 SET
@@ -584,6 +1027,222 @@ func (q *Queries) UpdateAdmin(ctx context.Context, arg UpdateAdminParams) error 
 		arg.Password,
 		arg.ProfileImageUrl,
 		arg.AdminID,
+	)
+	return err
+}
+
+const updateAdminDetails = `-- name: UpdateAdminDetails :exec
+UPDATE admins
+SET
+    first_name = $1,
+    last_name = $2,
+    email = $3,
+    profile_image_url = $4
+WHERE
+    admin_id = $5
+`
+
+type UpdateAdminDetailsParams struct {
+	FirstName       string      `json:"first_name"`
+	LastName        string      `json:"last_name"`
+	Email           string      `json:"email"`
+	ProfileImageUrl pgtype.Text `json:"profile_image_url"`
+	AdminID         pgtype.UUID `json:"admin_id"`
+}
+
+func (q *Queries) UpdateAdminDetails(ctx context.Context, arg UpdateAdminDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateAdminDetails,
+		arg.FirstName,
+		arg.LastName,
+		arg.Email,
+		arg.ProfileImageUrl,
+		arg.AdminID,
+	)
+	return err
+}
+
+const updateAdminPassword = `-- name: UpdateAdminPassword :exec
+UPDATE admins SET password = $1 WHERE admin_id = $2
+`
+
+type UpdateAdminPasswordParams struct {
+	Password string      `json:"password"`
+	AdminID  pgtype.UUID `json:"admin_id"`
+}
+
+// Update admin password
+func (q *Queries) UpdateAdminPassword(ctx context.Context, arg UpdateAdminPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateAdminPassword, arg.Password, arg.AdminID)
+	return err
+}
+
+const updateCourseDetails = `-- name: UpdateCourseDetails :exec
+UPDATE courses
+SET
+    course_name = $1,
+    difficulty_level = $2,
+    is_free = $3
+WHERE
+    course_id = $4
+`
+
+type UpdateCourseDetailsParams struct {
+	CourseName      string      `json:"course_name"`
+	DifficultyLevel pgtype.Text `json:"difficulty_level"`
+	IsFree          pgtype.Bool `json:"is_free"`
+	CourseID        pgtype.UUID `json:"course_id"`
+}
+
+// Update course details
+func (q *Queries) UpdateCourseDetails(ctx context.Context, arg UpdateCourseDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateCourseDetails,
+		arg.CourseName,
+		arg.DifficultyLevel,
+		arg.IsFree,
+		arg.CourseID,
+	)
+	return err
+}
+
+const updateExerciseDetails = `-- name: UpdateExerciseDetails :exec
+UPDATE exercises
+SET
+    exercise_type = $1,
+    question_text = $2,
+    correct_answer = $3,
+    options = $4,
+    audio_url = $5
+WHERE
+    exercise_id = $6
+`
+
+type UpdateExerciseDetailsParams struct {
+	ExerciseType  pgtype.Text `json:"exercise_type"`
+	QuestionText  string      `json:"question_text"`
+	CorrectAnswer string      `json:"correct_answer"`
+	Options       []byte      `json:"options"`
+	AudioUrl      pgtype.Text `json:"audio_url"`
+	ExerciseID    pgtype.UUID `json:"exercise_id"`
+}
+
+// Update exercise details
+func (q *Queries) UpdateExerciseDetails(ctx context.Context, arg UpdateExerciseDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateExerciseDetails,
+		arg.ExerciseType,
+		arg.QuestionText,
+		arg.CorrectAnswer,
+		arg.Options,
+		arg.AudioUrl,
+		arg.ExerciseID,
+	)
+	return err
+}
+
+const updateLanguageDetails = `-- name: UpdateLanguageDetails :exec
+UPDATE languages
+SET
+    language_name = $1,
+    language_code = $2,
+    flag_emoji = $3,
+    description = $4
+WHERE
+    language_id = $5
+`
+
+type UpdateLanguageDetailsParams struct {
+	LanguageName string      `json:"language_name"`
+	LanguageCode string      `json:"language_code"`
+	FlagEmoji    pgtype.Text `json:"flag_emoji"`
+	Description  pgtype.Text `json:"description"`
+	LanguageID   pgtype.UUID `json:"language_id"`
+}
+
+// Update language details
+func (q *Queries) UpdateLanguageDetails(ctx context.Context, arg UpdateLanguageDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateLanguageDetails,
+		arg.LanguageName,
+		arg.LanguageCode,
+		arg.FlagEmoji,
+		arg.Description,
+		arg.LanguageID,
+	)
+	return err
+}
+
+const updateLessonDetails = `-- name: UpdateLessonDetails :exec
+UPDATE lessons
+SET
+    lesson_title = $1,
+    lesson_order = $2,
+    xp_reward = $3,
+    is_unlocked = $4
+WHERE
+    lesson_id = $5
+`
+
+type UpdateLessonDetailsParams struct {
+	LessonTitle string      `json:"lesson_title"`
+	LessonOrder int32       `json:"lesson_order"`
+	XpReward    pgtype.Int4 `json:"xp_reward"`
+	IsUnlocked  pgtype.Bool `json:"is_unlocked"`
+	LessonID    pgtype.UUID `json:"lesson_id"`
+}
+
+// Update lesson details
+func (q *Queries) UpdateLessonDetails(ctx context.Context, arg UpdateLessonDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateLessonDetails,
+		arg.LessonTitle,
+		arg.LessonOrder,
+		arg.XpReward,
+		arg.IsUnlocked,
+		arg.LessonID,
+	)
+	return err
+}
+
+const updateUserCourseProgress = `-- name: UpdateUserCourseProgress :exec
+UPDATE user_courses
+SET
+    completion_percentage = $1
+WHERE
+    user_course_id = $2
+`
+
+type UpdateUserCourseProgressParams struct {
+	CompletionPercentage pgtype.Float8 `json:"completion_percentage"`
+	UserCourseID         pgtype.UUID   `json:"user_course_id"`
+}
+
+// Update user course progress
+func (q *Queries) UpdateUserCourseProgress(ctx context.Context, arg UpdateUserCourseProgressParams) error {
+	_, err := q.db.Exec(ctx, updateUserCourseProgress, arg.CompletionPercentage, arg.UserCourseID)
+	return err
+}
+
+const updateUserProgress = `-- name: UpdateUserProgress :exec
+UPDATE user_progress
+SET
+    is_completed = $1,
+    score = $2,
+    completed_at = $3
+WHERE
+    progress_id = $4
+`
+
+type UpdateUserProgressParams struct {
+	IsCompleted pgtype.Bool      `json:"is_completed"`
+	Score       pgtype.Int4      `json:"score"`
+	CompletedAt pgtype.Timestamp `json:"completed_at"`
+	ProgressID  pgtype.UUID      `json:"progress_id"`
+}
+
+// Update user progress
+func (q *Queries) UpdateUserProgress(ctx context.Context, arg UpdateUserProgressParams) error {
+	_, err := q.db.Exec(ctx, updateUserProgress,
+		arg.IsCompleted,
+		arg.Score,
+		arg.CompletedAt,
+		arg.ProgressID,
 	)
 	return err
 }

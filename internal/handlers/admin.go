@@ -214,10 +214,10 @@ func (h *AdminHandler) CreateNewLesson(c *gin.Context) {
 		return
 	}
 
-	// On successful response 
+	// On successful response
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "Lesson created successfully",
-		"lesson":   newLesson,
+		"message": "Lesson created successfully",
+		"lesson":  newLesson,
 	})
 
 }
@@ -258,3 +258,503 @@ func (h *AdminHandler) CreateNewExercise(c *gin.Context) {
 
 }
 
+/* Retrieval routes */
+func (h *AdminHandler) GetAvailableLanguages(c *gin.Context) {
+	var req db.GetAllLanguagesParams
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+	limitInt, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		return
+	}
+	limit := int32(limitInt)
+	req.Limit = limit
+	offsetInt, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+		return
+	}
+	req.Limit = limit
+	req.Offset = int32(offsetInt)
+	languages, err := h.store.GetAllLanguages(c, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create get languages because %s", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Available languages",
+		"languages": languages,
+	})
+}
+
+func (h *AdminHandler) GetAllCourses(c *gin.Context) {
+	courses, err := h.store.GetAllCourses(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create get courses because %s", err),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Available courses",
+		"courses": courses,
+	})
+}
+
+func (h *AdminHandler) GetAllLessons(c *gin.Context) {
+	var req db.GetAllLessonsParams
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+
+	limitInt, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+		return
+	}
+	req.Limit = int32(limitInt)
+	req.Offset = int32(offsetInt)
+
+	lessons, err := h.store.GetAllLessons(c, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create get lessons because %s", err),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Available lessons",
+		"lessons": lessons,
+	})
+}
+
+func (h *AdminHandler) GetAllExercises(c *gin.Context) {
+	var req db.GetAllExercisesParams
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+
+	limitInt, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+		return
+	}
+	req.Limit = int32(limitInt)
+	req.Offset = int32(offsetInt)
+
+	exercises, err := h.store.GetAllExercises(c, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Errorf("Couldn't create get exercises because %s", err),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Available exercises",
+		"exercises": exercises,
+	})
+}
+
+func (h *AdminHandler) GetLessonsByCourseId(c *gin.Context) {
+	var req db.GetLessonsByCourseIdParams
+	courseId := c.Param("courseId")
+
+	if courseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	// Convert courseId from string to UUID
+	courseUUID, err := utils.StringToPgTypeUUID(courseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid course ID format: %s", err)})
+		return
+	}
+
+	req.CourseID = courseUUID
+
+	lessons, err := h.store.GetLessonsByCourseId(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve lessons"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Lessons retrieved successfully",
+		"lessons": lessons,
+	})
+}
+
+func (h *AdminHandler) GetExercisesByLessonId(c *gin.Context) {
+	var req db.GetExercisesByLessonIdParams
+	lessonId := c.Param("lessonId")
+
+	if lessonId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lesson ID is required"})
+		return
+	}
+
+	// Convert lessonId from string to UUID
+	lessonUUID, err := utils.StringToPgTypeUUID(lessonId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid lesson ID format: %s", err)})
+		return
+	}
+
+	req.LessonID = lessonUUID
+
+	exercises, err := h.store.GetExercisesByLessonId(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve exercises"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Exercises retrieved successfully",
+		"exercises": exercises,
+	})
+}
+
+func (h *AdminHandler) GetExerciseById(c *gin.Context) {
+	exerciseId := c.Param("exerciseId")
+	if exerciseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Exercise ID is required"})
+		return
+	}
+
+	// Convert exerciseId from string to UUID
+	exerciseUUID, err := utils.StringToPgTypeUUID(exerciseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid exercise ID format: %s", err)})
+		return
+	}
+
+	exercise, err := h.store.GetExerciseById(c, exerciseUUID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Exercise not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve exercise"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Exercise retrieved successfully",
+		"exercise": exercise,
+	})
+}
+
+// UpdateAdminDetails updates the details of an admin
+func (h *AdminHandler) UpdateAdminDetails(c *gin.Context) {
+	var req db.UpdateAdminDetailsParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	adminId := c.Param("adminId")
+	if adminId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Admin ID is required"})
+		return
+	}
+
+	// Convert adminId from string to UUID
+	adminUUID, err := utils.StringToPgTypeUUID(adminId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid admin ID format: %s", err)})
+		return
+	}
+
+	req.AdminID = adminUUID
+
+	err = h.store.UpdateAdminDetails(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update admin details"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin details updated successfully",
+	})
+}
+
+// UpdateAdminPassword updates the password of an admin
+func (h *AdminHandler) UpdateAdminPassword(c *gin.Context) {
+	var req db.UpdateAdminPasswordParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	adminId := c.Param("adminId")
+	if adminId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Admin ID is required"})
+		return
+	}
+
+	// Convert adminId from string to UUID
+	adminUUID, err := utils.StringToPgTypeUUID(adminId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid admin ID format: %s", err)})
+		return
+	}
+
+	req.AdminID = adminUUID
+
+	err = h.store.UpdateAdminPassword(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update admin password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin password updated successfully",
+	})
+}
+
+func (h *AdminHandler) UpdateLanguageById(c *gin.Context) {
+	var req db.UpdateLanguageDetailsParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	languageId := c.Param("languageId")
+	if languageId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Language ID is required"})
+		return
+	}
+
+	// Convert languageId from string to UUID
+	languageUUID, err := utils.StringToPgTypeUUID(languageId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid language ID format: %s", err)})
+		return
+	}
+
+	req.LanguageID = languageUUID
+
+	err = h.store.UpdateLanguageDetails(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update language"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Language updated successfully",
+	})
+}
+
+func (h *AdminHandler) UpdateCourseById(c *gin.Context) {
+	var req db.UpdateCourseDetailsParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	courseId := c.Param("courseId")
+	if courseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	// Convert courseId from string to UUID
+	courseUUID, err := utils.StringToPgTypeUUID(courseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid course ID format: %s", err)})
+		return
+	}
+
+	req.CourseID = courseUUID
+
+	err = h.store.UpdateCourseDetails(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update course"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Course updated successfully",
+	})
+}
+
+func (h *AdminHandler) UpdateLessonById(c *gin.Context) {
+	var req db.UpdateLessonDetailsParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	lessonId := c.Param("lessonId")
+	if lessonId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lesson ID is required"})
+		return
+	}
+
+	// Convert lessonId from string to UUID
+	lessonUUID, err := utils.StringToPgTypeUUID(lessonId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid lesson ID format: %s", err)})
+		return
+	}
+
+	req.LessonID = lessonUUID
+
+	err = h.store.UpdateLessonDetails(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update lesson"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Lesson updated successfully",
+	})
+}
+
+func (h *AdminHandler) UpdateExerciseById(c *gin.Context) {
+	var req db.UpdateExerciseDetailsParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	exerciseId := c.Param("exerciseId")
+	if exerciseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Exercise ID is required"})
+		return
+	}
+
+	// Convert exerciseId from string to UUID
+	exerciseUUID, err := utils.StringToPgTypeUUID(exerciseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid exercise ID format: %s", err)})
+		return
+	}
+
+	req.ExerciseID = exerciseUUID
+
+	err = h.store.UpdateExerciseDetails(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update exercise"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Exercise updated successfully",
+	})
+}
+
+func (h *AdminHandler) DeleteLanguage(c *gin.Context) {
+	languageId := c.Param("languageId")
+	if languageId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Language ID is required"})
+		return
+	}
+
+	// Convert languageId from string to UUID
+	languageUUID, err := utils.StringToPgTypeUUID(languageId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid language ID format: %s", err)})
+		return
+	}
+
+	err = h.store.DeleteLanguage(c, languageUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete language"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Language deleted successfully",
+	})
+}
+
+func (h *AdminHandler) DeleteCourse(c *gin.Context) {
+	courseId := c.Param("courseId")
+	if courseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	// Convert courseId from string to UUID
+	courseUUID, err := utils.StringToPgTypeUUID(courseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid course ID format: %s", err)})
+		return
+	}
+
+	err = h.store.DeleteCourse(c, courseUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete course"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Course deleted successfully",
+	})
+}
+
+func (h *AdminHandler) DeleteLesson(c *gin.Context) {
+	lessonId := c.Param("lessonId")
+	if lessonId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lesson ID is required"})
+		return
+	}
+
+	// Convert lessonId from string to UUID
+	lessonUUID, err := utils.StringToPgTypeUUID(lessonId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid lesson ID format: %s", err)})
+		return
+	}
+
+	err = h.store.DeleteLesson(c, lessonUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete lesson"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Lesson deleted successfully",
+	})
+}
+
+func (h *AdminHandler) DeleteExercise(c *gin.Context) {
+	exerciseId := c.Param("exerciseId")
+	if exerciseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Exercise ID is required"})
+		return
+	}
+
+	// Convert exerciseId from string to UUID
+	exerciseUUID, err := utils.StringToPgTypeUUID(exerciseId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid exercise ID format: %s", err)})
+		return
+	}
+
+	err = h.store.DeleteExercise(c, exerciseUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete exercise"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Exercise deleted successfully",
+	})
+}

@@ -14,22 +14,70 @@ type Querier interface {
 	CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error)
 	CreateExercise(ctx context.Context, arg CreateExerciseParams) (Exercise, error)
-	// Maintenance Functionality --
-	// Creational Queries
 	CreateLanguage(ctx context.Context, arg CreateLanguageParams) (Language, error)
 	CreateLesson(ctx context.Context, arg CreateLessonParams) (Lesson, error)
 	CreateUserCourse(ctx context.Context, arg CreateUserCourseParams) (UserCourse, error)
 	CreateUserProgress(ctx context.Context, arg CreateUserProgressParams) (UserProgress, error)
+	// Delete admin by ID
 	DeleteAdmin(ctx context.Context, adminID pgtype.UUID) error
+	// Delete course by ID
+	DeleteCourse(ctx context.Context, courseID pgtype.UUID) error
+	// Delete courses by language ID
+	DeleteCoursesByLanguageId(ctx context.Context, languageID pgtype.UUID) error
+	// Delete exercise by ID
+	DeleteExercise(ctx context.Context, exerciseID pgtype.UUID) error
+	// Delete exercises by lesson ID
+	DeleteExercisesByLessonId(ctx context.Context, lessonID pgtype.UUID) error
+	// Delete language by ID
+	DeleteLanguage(ctx context.Context, languageID pgtype.UUID) error
+	// Delete lesson by ID
+	DeleteLesson(ctx context.Context, lessonID pgtype.UUID) error
+	// Delete lessons by course ID
+	DeleteLessonsByCourseId(ctx context.Context, courseID pgtype.UUID) error
+	// Delete user by ID
+	DeleteUser(ctx context.Context, userID pgtype.UUID) error
+	// Delete user courses by course ID
+	DeleteUserCoursesByCourseId(ctx context.Context, courseID pgtype.UUID) error
+	// Delete user courses by user ID
+	DeleteUserCoursesByUserId(ctx context.Context, userID pgtype.UUID) error
+	// Delete user progress by exercise ID
+	DeleteUserProgressByExerciseId(ctx context.Context, exerciseID pgtype.UUID) error
+	// Delete user progress by lesson ID
+	DeleteUserProgressByLessonId(ctx context.Context, lessonID pgtype.UUID) error
+	// Delete user progress by user ID
+	DeleteUserProgressByUserId(ctx context.Context, userID pgtype.UUID) error
 	GetAdminByEmail(ctx context.Context, email string) (GetAdminByEmailRow, error)
 	GetAdminById(ctx context.Context, adminID pgtype.UUID) (GetAdminByIdRow, error)
 	GetAdminForLogin(ctx context.Context, email string) (GetAdminForLoginRow, error)
-	GetAllAdmins(ctx context.Context, arg GetAllAdminsParams) ([]GetAllAdminsRow, error)
+	GetAllCourses(ctx context.Context) ([]Course, error)
+	GetAllCoursesByLanguage(ctx context.Context, languageID pgtype.UUID) ([]Course, error)
+	GetAllExercises(ctx context.Context, arg GetAllExercisesParams) ([]Exercise, error)
 	// Retrieval Queries
 	GetAllLanguages(ctx context.Context, arg GetAllLanguagesParams) ([]Language, error)
+	GetAllLessons(ctx context.Context, arg GetAllLessonsParams) ([]Lesson, error)
+	GetExerciseById(ctx context.Context, exerciseID pgtype.UUID) (Exercise, error)
+	GetExercisesByLessonId(ctx context.Context, arg GetExercisesByLessonIdParams) ([]Exercise, error)
 	GetLanguageById(ctx context.Context, languageID pgtype.UUID) (Language, error)
 	GetLanguageByName(ctx context.Context, languageName string) (Language, error)
+	GetLessonById(ctx context.Context, lessonID pgtype.UUID) (GetLessonByIdRow, error)
+	GetLessonsByCourseId(ctx context.Context, arg GetLessonsByCourseIdParams) ([]GetLessonsByCourseIdRow, error)
+	GetUserProgressByUserId(ctx context.Context, arg GetUserProgressByUserIdParams) ([]GetUserProgressByUserIdRow, error)
 	UpdateAdmin(ctx context.Context, arg UpdateAdminParams) error
+	UpdateAdminDetails(ctx context.Context, arg UpdateAdminDetailsParams) error
+	// Update admin password
+	UpdateAdminPassword(ctx context.Context, arg UpdateAdminPasswordParams) error
+	// Update course details
+	UpdateCourseDetails(ctx context.Context, arg UpdateCourseDetailsParams) error
+	// Update exercise details
+	UpdateExerciseDetails(ctx context.Context, arg UpdateExerciseDetailsParams) error
+	// Update language details
+	UpdateLanguageDetails(ctx context.Context, arg UpdateLanguageDetailsParams) error
+	// Update lesson details
+	UpdateLessonDetails(ctx context.Context, arg UpdateLessonDetailsParams) error
+	// Update user course progress
+	UpdateUserCourseProgress(ctx context.Context, arg UpdateUserCourseProgressParams) error
+	// Update user progress
+	UpdateUserProgress(ctx context.Context, arg UpdateUserProgressParams) error
 }
 
 var _ Querier = (*Queries)(nil)

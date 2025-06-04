@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-
+	"github.com/gin-contrib/cors"
 	db "lingo/internal/db/sqlc"
 )
 
@@ -25,7 +25,14 @@ func dummy(c *gin.Context) {
 
 func NewServer(pool *pgxpool.Pool, config utils.Config) *Server {
 	router := gin.Default()
-
+	// Set up CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Allow all origins for development
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 	server := &Server{}
 	router.Use(gin.Logger())
 

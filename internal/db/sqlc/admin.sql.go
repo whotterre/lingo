@@ -56,15 +56,17 @@ const createCourse = `-- name: CreateCourse :one
 INSERT INTO
     courses (
         course_name,
+        description,
         language_id,
         difficulty_level,
         is_free
     )
-VALUES ($1, $2, $3, $4) RETURNING course_id, language_id, course_name, difficulty_level, is_free, created_at
+VALUES ($1, $2, $3, $4, $5) RETURNING course_id, language_id, description, course_name, difficulty_level, is_free, created_at
 `
 
 type CreateCourseParams struct {
 	CourseName      string      `json:"course_name"`
+	Description     pgtype.Text `json:"description"`
 	LanguageID      pgtype.UUID `json:"language_id"`
 	DifficultyLevel pgtype.Text `json:"difficulty_level"`
 	IsFree          pgtype.Bool `json:"is_free"`
@@ -73,6 +75,7 @@ type CreateCourseParams struct {
 func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error) {
 	row := q.db.QueryRow(ctx, createCourse,
 		arg.CourseName,
+		arg.Description,
 		arg.LanguageID,
 		arg.DifficultyLevel,
 		arg.IsFree,
@@ -81,6 +84,7 @@ func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Cou
 	err := row.Scan(
 		&i.CourseID,
 		&i.LanguageID,
+		&i.Description,
 		&i.CourseName,
 		&i.DifficultyLevel,
 		&i.IsFree,
@@ -517,7 +521,7 @@ func (q *Queries) GetAdminForLogin(ctx context.Context, email string) (GetAdminF
 }
 
 const getAllCourses = `-- name: GetAllCourses :many
-SELECT course_id, language_id, course_name, difficulty_level, is_free, created_at FROM courses
+SELECT course_id, language_id, description, course_name, difficulty_level, is_free, created_at FROM courses
 `
 
 func (q *Queries) GetAllCourses(ctx context.Context) ([]Course, error) {
@@ -532,6 +536,7 @@ func (q *Queries) GetAllCourses(ctx context.Context) ([]Course, error) {
 		if err := rows.Scan(
 			&i.CourseID,
 			&i.LanguageID,
+			&i.Description,
 			&i.CourseName,
 			&i.DifficultyLevel,
 			&i.IsFree,
@@ -548,7 +553,7 @@ func (q *Queries) GetAllCourses(ctx context.Context) ([]Course, error) {
 }
 
 const getAllCoursesByLanguage = `-- name: GetAllCoursesByLanguage :many
-SELECT course_id, language_id, course_name, difficulty_level, is_free, created_at FROM courses WHERE language_id = $1
+SELECT course_id, language_id, description, course_name, difficulty_level, is_free, created_at FROM courses WHERE language_id = $1
 `
 
 func (q *Queries) GetAllCoursesByLanguage(ctx context.Context, languageID pgtype.UUID) ([]Course, error) {
@@ -563,6 +568,7 @@ func (q *Queries) GetAllCoursesByLanguage(ctx context.Context, languageID pgtype
 		if err := rows.Scan(
 			&i.CourseID,
 			&i.LanguageID,
+			&i.Description,
 			&i.CourseName,
 			&i.DifficultyLevel,
 			&i.IsFree,
@@ -1080,14 +1086,16 @@ const updateCourseDetails = `-- name: UpdateCourseDetails :exec
 UPDATE courses
 SET
     course_name = $1,
-    difficulty_level = $2,
-    is_free = $3
+    description = $2,
+    difficulty_level = $3,
+    is_free = $4
 WHERE
-    course_id = $4
+    course_id = $5
 `
 
 type UpdateCourseDetailsParams struct {
 	CourseName      string      `json:"course_name"`
+	Description     pgtype.Text `json:"description"`
 	DifficultyLevel pgtype.Text `json:"difficulty_level"`
 	IsFree          pgtype.Bool `json:"is_free"`
 	CourseID        pgtype.UUID `json:"course_id"`
@@ -1097,6 +1105,7 @@ type UpdateCourseDetailsParams struct {
 func (q *Queries) UpdateCourseDetails(ctx context.Context, arg UpdateCourseDetailsParams) error {
 	_, err := q.db.Exec(ctx, updateCourseDetails,
 		arg.CourseName,
+		arg.Description,
 		arg.DifficultyLevel,
 		arg.IsFree,
 		arg.CourseID,

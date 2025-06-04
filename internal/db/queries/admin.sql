@@ -76,11 +76,12 @@ VALUES ($1, $2, $3, $4) RETURNING *;
 INSERT INTO
     courses (
         course_name,
+        description,
         language_id,
         difficulty_level,
         is_free
     )
-VALUES ($1, $2, $3, $4) RETURNING *;
+VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
 -- name: CreateLesson :one
 INSERT INTO
@@ -293,10 +294,11 @@ WHERE
 UPDATE courses
 SET
     course_name = $1,
-    difficulty_level = $2,
-    is_free = $3
+    description = $2,
+    difficulty_level = $3,
+    is_free = $4
 WHERE
-    course_id = $4;
+    course_id = $5;
 
 -- Update lesson details
 -- name: UpdateLessonDetails :exec

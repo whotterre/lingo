@@ -21,6 +21,7 @@ type Admin struct {
 type Course struct {
 	CourseID        pgtype.UUID      `json:"course_id"`
 	LanguageID      pgtype.UUID      `json:"language_id"`
+	Description     pgtype.Text      `json:"description"`
 	CourseName      string           `json:"course_name"`
 	DifficultyLevel pgtype.Text      `json:"difficulty_level"`
 	IsFree          pgtype.Bool      `json:"is_free"`

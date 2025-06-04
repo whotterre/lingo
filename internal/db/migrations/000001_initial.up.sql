@@ -32,6 +32,7 @@ CREATE TABLE languages (
 CREATE TABLE courses (
     course_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     language_id UUID NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
+    description TEXT,
     course_name VARCHAR(100) NOT NULL,
     difficulty_level VARCHAR(20) CHECK (difficulty_level IN ('Beginner', 'Intermediate', 'Advanced')),
     is_free BOOLEAN DEFAULT TRUE,
